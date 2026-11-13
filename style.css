@@ -1,0 +1,762 @@
+/* --- GLOBAL STYLING & BASE SETUP ---
+   Set shared box sizing, page colors, and the centered content column. */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Quicksand', 'Segoe UI', sans-serif;
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(216, 236, 220, 0.6), transparent 55%),
+    #f7f8f3;
+  color: #2c3e50;
+}
+
+.parent {
+  display: flex;
+  justify-content: center;
+  padding: 56px 24px;
+  min-height: 100vh;
+  min-height: 100svh;
+}
+
+.child {
+  width: 100%;
+  max-width: 920px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+h1 {
+  text-align: center;
+  color: #1b4d3e; /* Rich forest green */
+  font-size: clamp(2.6rem, 7vw, 4.5rem);
+  margin: 4vh 0 0;
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  line-height: 1;
+}
+
+.page-intro {
+  margin-bottom: 18px;
+  color: #718078;
+  text-align: center;
+  font-size: 1rem;
+}
+
+/* --- INLINE SEARCH BAR SYSTEM ---
+   Keep the input and single submit button together as one pill-shaped control. */
+form {
+  display: flex;
+  gap: 12px;
+  max-width: 660px;
+  width: 100%;
+  margin: 14px auto 0;
+  padding: 8px;
+  border: 1px solid #e6ebe3;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 14px 40px rgba(27, 77, 62, 0.09);
+}
+
+input[type=text] {
+  flex: 1;
+  min-width: 0;
+  padding: 13px 20px;
+  border: 0;
+  border-radius: 30px;
+  font-size: 16px;
+  outline: none;
+  background-color: transparent;
+  box-shadow: none;
+  transition: background-color 0.2s ease;
+}
+
+input[type=text]:focus {
+  background-color: #f8fbf8;
+}
+
+.button {
+  background-color: #1b4d3e;
+  border: none;
+  color: white;
+  padding: 13px 30px;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 30px;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(27, 77, 62, 0.18);
+  transition: all 0.2s ease;
+}
+
+.button:hover {
+  background-color: #276b53;
+  transform: translateY(-1px);
+}
+
+.button:disabled {
+  cursor: wait;
+  opacity: 0.75;
+}
+
+.empty-results {
+  text-align: center;
+  color: #64746d;
+}
+
+.roulette-overlay {
+  /* Cover the full viewport so the picker stays visible without page scrolling. */
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100vw;
+  height: 100dvh;
+  padding: 24px 18px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 50% 42%, #294536, #14271e 62%, #10231b);
+  animation: roulette-fade-in 240ms ease-out both;
+}
+
+.roulette-panel {
+  width: min(100%, 1080px);
+  flex: 0 0 auto;
+  text-align: center;
+  color: #fff;
+}
+
+.roulette-kicker {
+  color: #bedac2;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  margin-bottom: 14px;
+}
+
+.roulette-panel h2 {
+  color: #fff;
+  font-size: clamp(1.7rem, 4vw, 2.5rem);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  margin-bottom: 34px;
+}
+
+.roulette-window {
+  /* Clip the moving row and fade its edges to focus attention on the center. */
+  position: relative;
+  width: 100%;
+  height: min(390px, 52vh);
+  min-height: 260px;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent);
+}
+
+.roulette-track {
+  /* The track is positioned at the viewport center; React translates it by cards. */
+  position: absolute;
+  top: 0;
+  left: 50%;
+  display: flex;
+  width: max-content;
+  height: 100%;
+  gap: 22px;
+  transition: transform 5.6s cubic-bezier(0.08, 0.7, 0.08, 1);
+  will-change: transform;
+}
+
+.roulette-card {
+  /* Fixed card width and the 22px gap define the reel's 272px step size. */
+  position: relative;
+  flex: 0 0 250px;
+  height: min(360px, 48vh);
+  min-height: 250px;
+  align-self: center;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  background: #263b30;
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.3);
+  color: #fff;
+  transition: border-color 300ms ease, box-shadow 300ms ease, scale 300ms ease;
+}
+
+.roulette-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.roulette-card::after {
+  position: absolute;
+  inset: 25% 0 0;
+  background: linear-gradient(transparent, rgba(11, 24, 18, 0.9));
+  content: "";
+}
+
+.roulette-card.is-winner {
+  scale: 1.035;
+  border: 2px solid #d5efbd;
+  box-shadow: 0 0 0 5px rgba(213, 239, 189, 0.16), 0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+.roulette-center-marker {
+  /* Frame one card in the center; its 272px width matches a card plus its gap. */
+  position: absolute;
+  inset: 6px auto 6px 50%;
+  width: 272px;
+  transform: translateX(-50%);
+  border-right: 1px solid rgba(213, 239, 189, 0.72);
+  border-left: 1px solid rgba(213, 239, 189, 0.72);
+  background: linear-gradient(90deg, rgba(213, 239, 189, 0.08), transparent 20%, transparent 80%, rgba(213, 239, 189, 0.08));
+  pointer-events: none;
+}
+
+.roulette-center-marker::before,
+.roulette-center-marker::after {
+  position: absolute;
+  left: 50%;
+  width: 0;
+  height: 0;
+  transform: translateX(-50%);
+  border-right: 9px solid transparent;
+  border-left: 9px solid transparent;
+  content: "";
+}
+
+.roulette-center-marker::before {
+  top: 0;
+  border-top: 11px solid #d5efbd;
+}
+
+.roulette-center-marker::after {
+  bottom: 0;
+  border-bottom: 11px solid #d5efbd;
+}
+
+.roulette-meal-name {
+  position: absolute;
+  z-index: 1;
+  right: 20px;
+  bottom: 22px;
+  left: 20px;
+  padding: 0;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.roulette-winner-badge {
+  position: absolute;
+  z-index: 2;
+  top: 16px;
+  left: 16px;
+  padding: 7px 10px;
+  border-radius: 7px;
+  background: #d5efbd;
+  color: #1b4d3e;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+}
+
+.roulette-caption {
+  min-height: 28px;
+  margin-top: 22px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.95rem;
+}
+
+.roulette-progress {
+  width: 150px;
+  height: 4px;
+  margin: 18px auto 0;
+  overflow: hidden;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.roulette-progress::after {
+  display: block;
+  width: 45%;
+  height: 100%;
+  border-radius: inherit;
+  background: #d5efbd;
+  content: "";
+  animation: roulette-progress 900ms ease-in-out infinite;
+}
+
+@keyframes roulette-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes roulette-progress {
+  from { transform: translateX(-120%); }
+  to { transform: translateX(340%); }
+}
+
+@media (max-width: 480px) {
+  .parent {
+    padding: 28px 16px;
+  }
+
+  form {
+    gap: 4px;
+    padding: 6px;
+  }
+
+  input[type=text] {
+    padding-inline: 14px;
+    font-size: 14px;
+  }
+
+  .button {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+
+  .roulette-panel h2 {
+    margin-bottom: 24px;
+  }
+
+  .roulette-window {
+    height: min(340px, 48vh);
+    min-height: 230px;
+  }
+
+  .roulette-card {
+    height: min(310px, 44vh);
+    min-height: 220px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .roulette-overlay {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+
+  .roulette-track {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* --- OPTIONAL RESULT GRID ---
+   These styles remain available if the commented-out grid in App.jsx is restored. */
+.meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 30px;
+  justify-items: center;
+  padding-top: 10px;
+}
+
+/* --- OPTIONAL MEAL CARDS ---
+   MealCard.jsx uses these styles when the result grid is active. */
+.meal-card {
+  width: 100%;
+  max-width: 260px;
+  background-color: #ffffff;
+  border-radius: 20px;
+  border: 2px solid #e2ece9;
+  box-shadow: 0 8px 20px rgba(4, 170, 109, 0.06);
+  overflow: hidden;
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.meal-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 30px rgba(4, 170, 109, 0.18);
+}
+
+.meal-image-wrapper {
+  width: 100%;
+  height: 180px;
+  overflow: hidden;
+}
+
+.meal-image-wrapper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.meal-card:hover .meal-image-wrapper img {
+  transform: scale(1.06);
+}
+
+.meal-info {
+  padding: 16px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex-grow: 1;
+  gap: 12px;
+}
+
+.meal-card h3 {
+  font-size: 1.15rem;
+  color: #1b4d3e; /* Forest green title */
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.view-recipe-btn {
+  background-color: #e6f6f0; /* Soft pale mint */
+  color: #04AA6D;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  width: 100%;
+  transition: all 0.2s ease;
+}
+
+.view-recipe-btn:hover {
+  background-color: #04AA6D;
+  color: #ffffff;
+}
+
+/* --- RECIPE DETAILS ---
+   The dialog is scrollable and layered over a dimmed, blurred page backdrop. */
+.recipe-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(15, 31, 24, 0.68);
+  backdrop-filter: blur(7px);
+  animation: roulette-fade-in 220ms ease-out both;
+}
+
+.recipe-modal {
+  position: relative;
+  width: min(100%, 980px);
+  max-height: min(90vh, 900px);
+  max-height: min(90dvh, 900px);
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 28px;
+  background: #fffefa;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.3);
+  color: #263b30;
+  text-align: left;
+}
+
+.recipe-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.recipe-modal::-webkit-scrollbar-thumb {
+  border: 2px solid #fffefa;
+  border-radius: 10px;
+  background: #dce7dc;
+}
+
+.recipe-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid rgba(27, 77, 62, 0.12);
+  border-radius: 50%;
+  background: rgba(255, 254, 250, 0.94);
+  color: #1b4d3e;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.recipe-close:hover {
+  transform: rotate(90deg);
+  background: #eaf3e9;
+}
+
+.recipe-modal-main {
+  /* Desktop uses a photo column and a recipe-information column. */
+  display: grid;
+  grid-template-columns: minmax(250px, 0.85fr) minmax(0, 1.15fr);
+  gap: clamp(24px, 4vw, 48px);
+  padding: clamp(22px, 4vw, 42px);
+}
+
+.recipe-photo {
+  /* The image fills its column; the label is positioned over the photo. */
+  position: relative;
+  min-height: 390px;
+  overflow: hidden;
+  align-self: stretch;
+  border-radius: 21px;
+  background: #e8eee7;
+}
+
+.recipe-photo img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 390px;
+  object-fit: cover;
+}
+
+.recipe-photo::after {
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(transparent, rgba(14, 35, 25, 0.48));
+  content: "";
+  pointer-events: none;
+}
+
+.recipe-photo-label {
+  position: absolute;
+  bottom: 18px;
+  left: 18px;
+  z-index: 1;
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #1b4d3e;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.recipe-overview {
+  min-width: 0;
+  padding: 8px 6px 0 0;
+}
+
+.recipe-eyebrow {
+  margin-bottom: 10px;
+  color: #6a8e70;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+}
+
+.recipe-overview h2 {
+  margin: 0 42px 18px 0;
+  color: #1b4d3e;
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.05;
+  overflow-wrap: anywhere;
+}
+
+.recipe-tags {
+  /* Category and cuisine chips wrap when the recipe has several labels. */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 25px;
+}
+
+.recipe-tags span {
+  display: flex;
+  min-width: 105px;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 13px;
+  border: 1px solid #e8eee6;
+  border-radius: 12px;
+  background: #f6f8f2;
+  color: #314c3b;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.recipe-tags small {
+  color: #839188;
+  font-size: 0.58rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.recipe-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.recipe-section-heading h3 {
+  margin: 0;
+  color: #1b4d3e;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.recipe-section-heading > span {
+  color: #859287;
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+}
+
+.recipe-ingredients ul {
+  /* Two compact ingredient columns on desktop; the narrow-screen rule stacks them. */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 16px;
+  list-style: none;
+}
+
+.recipe-ingredients li {
+  position: relative;
+  padding: 9px 0 9px 19px;
+  border-bottom: 1px solid #edf0e9;
+  color: #536359;
+  font-size: 0.86rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.recipe-ingredients li::before {
+  position: absolute;
+  top: 15px;
+  left: 1px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #7aa17b;
+  content: "";
+}
+
+.recipe-instructions {
+  /* Separate the long preparation text visually from the ingredients above. */
+  padding: 25px clamp(22px, 4vw, 42px) 32px;
+  border-top: 1px solid #e9eee6;
+  background: linear-gradient(180deg, #f8faf5, #fffefa);
+}
+
+.recipe-instructions .recipe-section-heading {
+  margin-bottom: 12px;
+}
+
+.recipe-instructions p {
+  color: #536359;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  white-space: pre-line;
+}
+
+.recipe-video-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  background: #eaf3e9;
+  color: #1b4d3e;
+  font-size: 0.85rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background-color 180ms ease, transform 180ms ease;
+}
+
+.recipe-video-link:hover {
+  transform: translateY(-1px);
+  background: #dcebdc;
+}
+
+.recipe-video-link span {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  border-radius: 50%;
+  background: #1b4d3e;
+  color: #fff;
+  font-size: 0.6rem;
+}
+
+@media (max-width: 760px) {
+  /* Use a stacked image/details layout on tablets and phones. */
+  .recipe-modal-backdrop {
+    padding: 12px;
+  }
+
+  .recipe-modal {
+    width: min(100%, 560px);
+    max-height: 94vh;
+    max-height: 94dvh;
+    border-radius: 22px;
+  }
+
+  .recipe-modal-main {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    padding: 14px;
+  }
+
+  .recipe-photo {
+    min-height: 0;
+    height: clamp(190px, 31vh, 270px);
+    border-radius: 16px;
+  }
+
+  .recipe-photo img {
+    min-height: 0;
+  }
+
+  .recipe-overview {
+    padding: 0 5px;
+  }
+
+  .recipe-overview h2 {
+    margin-right: 35px;
+  }
+
+  .recipe-instructions {
+    padding: 22px 20px 26px;
+  }
+}
+
+@media (max-width: 420px) {
+  /* A single ingredient column is easier to read on very narrow screens. */
+  .recipe-ingredients ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recipe-tags {
+    gap: 7px;
+  }
+
+  .recipe-tags span {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.error {
+  color: #d9534f;
+  text-align: center;
+  font-weight: bold;
+}
